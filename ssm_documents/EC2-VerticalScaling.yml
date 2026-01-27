@@ -1,16 +1,14 @@
 schemaVersion: '0.3'
-description: Scale instances vertically to desired size 
+description: Scale instances vertically to desired size
 assumeRole: '{{ AutomationAssumeRole }}'
 parameters:
   InstanceId:
     type: String
     description: (Required) The ID of the EC2 instance to resize
-  Operation:
+  TargetType:
     type: String
-    description: Scale up your instance to m7g.2xlarge or scale down to t4g.small
-    allowedValues:
-      - scaleUp
-      - scaleDown
+    description: The instance type you would like the instance to be scaled to
+    default: t4g.small
   AutomationAssumeRole:
     type: String
     description: (Optional) The ARN of the IAM role that allows Systems Manager Automation to perform actions on your behalf
@@ -34,7 +32,7 @@ mainSteps:
     name: WaitForInstanceToStop
     action: aws:waitForAwsResourceProperty
     timeoutSeconds: 600
-    nextStep: ScaleOperation
+    nextStep: ScaleInstance
     isEnd: false
     inputs:
       Service: ec2
@@ -44,19 +42,8 @@ mainSteps:
       PropertySelector: $.Reservations[0].Instances[0].State.Name
       DesiredValues:
         - stopped
-  - name: ScaleOperation
-    action: aws:branch
-    inputs:
-      Choices:
-        - NextStep: ScaleUpInstance
-          Variable: '{{ Operation }}'
-          StringEquals: scaleUp
-        - NextStep: ScaleDownInstance
-          Variable: '{{ Operation }}'
-          StringEquals: scaleDown
-      Default: ScaleDownInstance
-  - description: Scaling down the instance to t4g.small
-    name: ScaleDownInstance
+  - description: Modify the instance type to the given instance type
+    name: ScaleInstance
     action: aws:executeAwsApi
     nextStep: StartInstance
     isEnd: false
@@ -64,19 +51,7 @@ mainSteps:
       Service: ec2
       Api: ModifyInstanceAttribute
       InstanceId: '{{ InstanceId }}'
-      InstanceType:
-        Value: t4g.small
-  - description: Modify the instance type to m7g.2xlarge
-    name: ScaleUpInstance
-    action: aws:executeAwsApi
-    nextStep: StartInstance
-    isEnd: false
-    inputs:
-      Service: ec2
-      Api: ModifyInstanceAttribute
-      InstanceId: '{{ InstanceId }}'
-      InstanceType:
-        Value: m7g.2xlarge
+      InstanceType: '{{ TargetType }}'
   - description: Start the EC2 instance
     name: StartInstance
     action: aws:executeAwsApi
