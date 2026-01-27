@@ -51,7 +51,8 @@ mainSteps:
       Service: ec2
       Api: ModifyInstanceAttribute
       InstanceId: '{{ InstanceId }}'
-      InstanceType: '{{ TargetType }}'
+      InstanceType:
+        Value: '{{ TargetType }}'
   - description: Start the EC2 instance
     name: StartInstance
     action: aws:executeAwsApi
