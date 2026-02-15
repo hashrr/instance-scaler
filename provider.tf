@@ -14,7 +14,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-west-1"
+  region = "ap-south-1"
   default_tags {
     tags = {
       "project"     = "instance-scaler"
